@@ -1,6 +1,8 @@
 
 dataset/
-data_raw/
+data_raw/ 
+dataset.zip/
+manifest.csv/
 
 # Python cache
 __pycache__/
