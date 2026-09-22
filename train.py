@@ -1,15 +1,4 @@
-"""
-train.py
---------
-Trains the 5-class Document AI CNN on the pipeline from data_pipeline.py.
 
-Baseline run: NO class weights yet (deliberate -- see project notes).
-Class weights will be added as a documented v2 improvement afterwards,
-so you can report a before/after accuracy delta.
-
-Usage (Colab):
-    !python train.py
-"""
 
 import json
 
