@@ -1,0 +1,7 @@
+{
+  "certificate": 0,
+  "form": 1,
+  "id_card": 2,
+  "invoice": 3,
+  "resume": 4
+}

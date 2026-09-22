@@ -1,17 +1,21 @@
-
 dataset/
-data_raw/ 
-dataset.zip/
-manifest.csv/
+data_raw/
+dataset.zip
+
+# Trained models (large binaries - don't belong in git)
+*.keras
+*.h5
+
+# Training/eval outputs (regenerable from scripts - keep out of git)
+training_curves*.png
+confusion_matrix*.png
 
 # Python cache
 __pycache__/
 *.pyc
 
-
 .venv/
 venv/
-
 
 .DS_Store
 Thumbs.db

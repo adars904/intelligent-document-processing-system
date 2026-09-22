@@ -1,0 +1,13 @@
+{
+  "test_accuracy": 0.8696969747543335,
+  "test_loss": 0.30168667435646057,
+  "epochs_run": 24,
+  "class_weights_used": false,
+  "class_names": [
+    "certificate",
+    "form",
+    "id_card",
+    "invoice",
+    "resume"
+  ]
+}
