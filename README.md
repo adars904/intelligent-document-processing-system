@@ -8,7 +8,7 @@ to human review. Built as a placement portfolio project.
 
 ## Project phases
 
-- [x] **Phase 1 — CNN baseline + dataset manifest** *(in progress)*
+- [x] **Phase 1 — CNN baseline + dataset manifest** *(completed )*
 - [ ] Phase 2 — Transfer learning
 - [ ] Phase 3 — OCR
 - [ ] Phase 4 — Extraction
