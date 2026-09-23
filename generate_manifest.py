@@ -1,37 +1,4 @@
-"""
-generate_manifest.py
 
-Walks the dataset/ directory (one subfolder per class) and produces a single
-manifest.csv that is the source of truth for every downstream stage
-(dataloaders, training, audit logging, reproducibility).
-
-Expected input layout:
-    dataset/
-    ├── certificate/   *.jpg / *.png / *.jpeg
-    ├── form/
-    ├── id_card/
-    ├── invoice/
-    └── resume/
-
-Output: manifest.csv with columns:
-    filepath   - relative path from dataset root, forward-slash normalized
-    filename   - basename only
-    class_name - certificate / form / id_card / invoice / resume
-    source     - "real" (RVL-CDIP) or "synthetic" (custom generator)
-    split      - train / val / test
-
-Split strategy:
-    70/15/15, stratified jointly on (class_name, source) so that no class or
-    source is over/under-represented in val/test relative to train. In this
-    dataset source is currently a deterministic function of class_name
-    (id_card, certificate -> synthetic; invoice, form, resume -> real), so
-    stratifying on class_name alone would give an identical split today —
-    but stratifying on the combined key keeps this script correct even if a
-    class later mixes real + synthetic images (e.g. augmented real data).
-
-Usage:
-    python generate_manifest.py --dataset-root /path/to/dataset --out manifest.csv
-"""
 
 import argparse
 import hashlib

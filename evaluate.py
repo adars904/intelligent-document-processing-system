@@ -1,15 +1,4 @@
-"""
-evaluate.py
------------
-Evaluates a trained model on the test set with per-class metrics,
-not just aggregate accuracy. Use this on both the baseline model and
-the class-weighted v2 model so you can compare them class-by-class.
 
-Usage (Colab):
-    !python evaluate.py                        # evaluates final_model.keras
-    !python evaluate.py --model best_model.keras
-    !python evaluate.py --model final_model_v2.keras --tag v2_class_weighted
-"""
 
 import argparse
 import json

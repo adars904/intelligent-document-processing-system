@@ -1,24 +1,4 @@
-"""
-data_pipeline.py
------------------
-Builds tf.data.Dataset pipelines (train/val/test) for the Document AI
-CNN classifier, from manifest.csv.
 
-Expects manifest.csv with columns:
-    filepath,filename,class_name,source,file_hash,split
-- filepath : relative path, e.g. "certificate/degree_certificate_0012.jpg"
-             (joined with DATASET_ROOT below)
-- class_name : string label (certificate, form, id_card, invoice, resume)
-- split : one of "train", "val", "test" (pre-assigned in the CSV)
-
-Labels are encoded as sparse integers (0..4), mapped alphabetically from
-class_name. The mapping is saved to class_indices.json so it stays
-reproducible across training/inference.
-
-Usage (in Colab / train.py):
-    from data_pipeline import get_datasets
-    train_ds, val_ds, test_ds, class_names = get_datasets()
-"""
 
 import json
 import os
