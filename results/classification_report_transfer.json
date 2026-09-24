@@ -1,0 +1,45 @@
+{
+  "certificate": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1-score": 1.0,
+    "support": 90.0
+  },
+  "form": {
+    "precision": 0.6617647058823529,
+    "recall": 0.75,
+    "f1-score": 0.703125,
+    "support": 120.0
+  },
+  "id_card": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1-score": 1.0,
+    "support": 210.0
+  },
+  "invoice": {
+    "precision": 0.7830188679245284,
+    "recall": 0.6916666666666667,
+    "f1-score": 0.7345132743362832,
+    "support": 120.0
+  },
+  "resume": {
+    "precision": 0.9322033898305084,
+    "recall": 0.9166666666666666,
+    "f1-score": 0.9243697478991597,
+    "support": 120.0
+  },
+  "accuracy": 0.8833333333333333,
+  "macro avg": {
+    "precision": 0.875397392727478,
+    "recall": 0.8716666666666667,
+    "f1-score": 0.8724016044470886,
+    "support": 660.0
+  },
+  "weighted avg": {
+    "precision": 0.8867249024795253,
+    "recall": 0.8833333333333333,
+    "f1-score": 0.8840014585882624,
+    "support": 660.0
+  }
+}
