@@ -1,16 +1,13 @@
 """
 train_v2.py
------------
+
 Same architecture, same callbacks, same epochs as train.py.
 ONLY difference: class_weight is computed from the train split and
 passed into model.fit(). This isolates class weighting as the single
 variable being tested against the baseline run.
 
-Usage (Colab):
-    !python train_v2.py
 
-Then compare against baseline with:
-    !python evaluate.py --model final_model_v2.keras --tag v2_class_weighted
+
 """
 
 import json

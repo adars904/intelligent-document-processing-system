@@ -1,5 +1,3 @@
-
-
 import json
 import os
 
@@ -9,22 +7,17 @@ import tensorflow as tf
 # ---- Config ----
 DATASET_ROOT = "/content/dataset/dataset"
 MANIFEST_PATH = "/content/manifest.csv"
-IMAGE_SIZE = (160, 160)   # must match Rescaling(input_shape=...) in the model
-BATCH_SIZE = 32
+IMAGE_SIZE = (320, 320)
+BATCH_SIZE = 16
 CLASS_INDICES_PATH = "class_indices.json"
 
 
 def _build_label_mapping(df: pd.DataFrame) -> dict:
-    """Alphabetical class_name -> int index, so the mapping is deterministic
-    and reproducible regardless of row order in the CSV."""
     class_names = sorted(df["class_name"].unique())
     return {name: idx for idx, name in enumerate(class_names)}
 
 
 def _load_and_preprocess(filepath, label):
-    """Read an image file, decode as RGB, resize to IMAGE_SIZE.
-    NOTE: no normalization here -- Rescaling(1/255) already lives inside
-    the model, so the pipeline must hand it raw 0-255 float pixels."""
     image = tf.io.read_file(filepath)
     image = tf.image.decode_jpeg(image, channels=3)
     image = tf.image.resize(image, IMAGE_SIZE)
@@ -46,7 +39,6 @@ def _make_dataset(df: pd.DataFrame, label_map: dict, shuffle: bool) -> tf.data.D
 
 
 def get_datasets(manifest_path: str = MANIFEST_PATH):
-    """Returns (train_ds, val_ds, test_ds, class_names) ready for model.fit()."""
     df = pd.read_csv(manifest_path)
 
     required_cols = {"filepath", "class_name", "split"}
@@ -55,7 +47,7 @@ def get_datasets(manifest_path: str = MANIFEST_PATH):
         raise ValueError(f"manifest.csv is missing required columns: {missing}")
 
     label_map = _build_label_mapping(df)
-    class_names = sorted(label_map, key=label_map.get)  # index-ordered list
+    class_names = sorted(label_map, key=label_map.get)
 
     with open(CLASS_INDICES_PATH, "w") as f:
         json.dump(label_map, f, indent=2)
