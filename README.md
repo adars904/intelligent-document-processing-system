@@ -12,7 +12,8 @@ to human review. Built as a placement portfolio project.
 
 - [x] **Phase 1 — CNN baseline + dataset manifest** *(completed)*
 - [x] **Phase 2 — Transfer learning (MobileNetV2)** *(completed)*
-- [] **Phase 2.5 — Modern data augmentation + combined retraining** *(still going)*
+- [x] **Phase 2.5 — Modern data collection** *(completed)*
+- [ ] Phase 2.6 — Combined retraining (old + modern) *(next)*
 - [ ] Phase 3 — OCR
 - [ ] Phase 4 — Extraction
 - [ ] Phase 5 — Validation / confidence scoring
@@ -51,38 +52,40 @@ modern images were added for the three RVL-CDIP classes:
 
 | Class | Original (RVL-CDIP) | Modern added | Total |
 |---|---|---|---|
-| Invoice | 800 | ~300 | ~1,100 |
-| Form | 800 | ~300 | ~1,100 |
-| Resume | 800 | ~300 | ~1,100 |
+| Invoice | 800 | 450 | 1,250 |
+| Form | 800 | 450 | 1,250 |
+| Resume | 800 | 450 | 1,250 |
 | ID Card | 1,400 (synthetic) | 0 | 1,400 |
 | Certificate | 600 (synthetic) | 0 | 600 |
 
 **Modern sources:**
-- **Resume:** Resumes-Images-Datasets (Kaggle, ~12.7k images)
-- **Invoice:** High-Quality Invoice Images for OCR (Kaggle/Hugging Face, ~8.2k images)
-- **Form:** CommonForms (Hugging Face) + synthetic HTML-rendered templates
+- **Resume:** Resumes-Images-Datasets (Kaggle, ~12.7k images) — 
+  150 each from Bing_images, Scrapped_Resumes, resume_database
+- **Invoice:** High-Quality Invoice Images for OCR (Kaggle, ~8.2k images) — 
+  150 each from batch_1, batch_2, batch_3
+- **Form:** FUNSD+ (Hugging Face, 1,026 images) — 450 sampled
 
 **Rationale:** original training data was entirely historical microfilm scans
 (RVL-CDIP) plus synthetic ID Card / Certificate images. Models trained only
 on historical scans fail on modern clean documents due to domain shift.
-Adding ~300 modern images per class teaches the model to recognize document
+Adding 450 modern images per class teaches the model to recognize document
 structure independent of style (scan noise vs clean render).
 
-### Folder structure
+### Folder structure (target after Phase 2.6 merge)
 
 ```
 dataset/
 ├── certificate/
 ├── form/
-│   ├── rvl_cdip/        # original
-│   └── modern/          # Phase 2.5 additions
+│   ├── (original RVL-CDIP images)
+│   └── form_modern/         # 450 modern
 ├── id_card/
 ├── invoice/
-│   ├── rvl_cdip/        # original
-│   └── modern/          # Phase 2.5 additions
+│   ├── (original RVL-CDIP images)
+│   └── invoice_modern/      # 450 modern
 └── resume/
-    ├── rvl_cdip/        # original
-    └── modern/          # Phase 2.5 additions
+    ├── (original RVL-CDIP images)
+    └── resume_modern/       # 450 modern
 ```
 
 ---
@@ -162,29 +165,39 @@ error is a data limitation, not a model capacity limitation.**
 
 ---
 
-## Phase 2.5 status — Modern data augmentation
+## Phase 2.5 status — Modern data collection ✅ Complete
 
-To improve performance on modern documents and break the RVL-CDIP ceiling,
-~300 modern images per class were added for Invoice, Form, and Resume.
+**1,350 modern images collected** across the three RVL-CDIP classes
+(450 each for Invoice, Form, Resume).
 
-### Approach
+| Class | Modern images | Sources |
+|---|---|---|
+| Resume | 450 | Kaggle Resumes-Images-Datasets (150 × 3 subfolders) |
+| Invoice | 450 | Kaggle High-Quality Invoice Images (150 × 3 batches) |
+| Form | 450 | Hugging Face FUNSD+ |
+| **Total** | **1,350** | |
 
-- Combined old (RVL-CDIP) + modern images in a single `manifest.csv`
-- Maintained class balance (~1,100 per class total for the 3 affected classes)
-- Mixed old + modern rows in every split (train/val/test) to prevent domain leakage
-- Retrained MobileNetV2 with identical hyperparameters to Phase 2
+All modern images stored in Drive at:
+`/content/drive/MyDrive/new_data/{class}_modern/`
 
-### Results (Phase 2.5, combined data)
+## Phase 2.6 status — Combined retraining ⏳ Next
 
-*(to be filled after retraining)*
+*(to be completed)*
+
+**Plan:**
+1. Merge modern folders into `dataset/{class}/{class}_modern/`
+2. Regenerate `manifest.csv` with combined old + modern data
+3. Add `class_weight` to handle ID Card / Certificate imbalance
+4. Retrain MobileNetV2 with identical Phase 2 hyperparameters
+5. Evaluate on old-only, modern-only, and mixed test sets
+
+**Expected results:**
 
 | Test set | Accuracy |
 |---|---|
-| RVL-CDIP only | TBD |
-| Modern only | TBD |
-| Mixed | TBD |
-
-**Expected:** ~90–93% on modern documents; slight dip (1–2%) on RVL-CDIP-only.
+| RVL-CDIP only | ~85–87% |
+| Modern only | ~90–93% |
+| Mixed | ~88–91% |
 
 ---
 
