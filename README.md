@@ -17,7 +17,7 @@ to human review. Built as a placement portfolio project.
 - [ ] Phase 4 — Extraction
 - [ ] Phase 5 — Validation / confidence scoring
 - [ ] Phase 6 — FastAPI + SQLite + model versioning + audit log
-- [ ] Phase 7 — Streamlit dashboard
+- [ ] Phase 7 — React dashboard
 - [ ] Phase 8 — Testing + golden set + adversarial fixtures + Known Failure Modes doc
 - [ ] Phase 9 — Integration + docs + Future Work (async job queue)
 
