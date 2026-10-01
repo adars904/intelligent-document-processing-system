@@ -1,21 +1,21 @@
+# Datasets (large, live in Drive)
 dataset/
 data_raw/
+new_data/
 dataset.zip
 
 # Trained models (large binaries - don't belong in git)
 *.keras
 *.h5
 
-# Training/eval outputs (regenerable from scripts - keep out of git)
-training_curves*.png
-confusion_matrix*.png
-
 # Python cache
 __pycache__/
 *.pyc
 
+# Virtual environments
 .venv/
 venv/
 
+# OS junk
 .DS_Store
 Thumbs.db

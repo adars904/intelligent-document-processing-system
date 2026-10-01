@@ -1,5 +1,3 @@
-
-
 import argparse
 import hashlib
 import os
@@ -29,6 +27,10 @@ def file_hash(path: Path, chunk_size: int = 65536) -> str:
 
 
 def scan_dataset(dataset_root: Path) -> pd.DataFrame:
+    """Walk dataset_root/<class_name>/ and pick up:
+       1. Direct image files inside class_name/            → variant = "original"
+       2. Images inside class_name/<class_name>_modern/    → variant = "modern"
+    """
     rows = []
     class_dirs = sorted([d for d in dataset_root.iterdir() if d.is_dir()])
 
@@ -38,26 +40,43 @@ def scan_dataset(dataset_root: Path) -> pd.DataFrame:
     for class_dir in class_dirs:
         class_name = class_dir.name
         source = infer_source(class_name)
-        files = [
-            p for p in sorted(class_dir.rglob("*"))
-            if p.is_file() and p.suffix.lower() in VALID_EXTENSIONS
-        ]
+        files = []
+
+        # 1. Direct files in class_dir (skip anything inside a _modern subfolder)
+        for p in sorted(class_dir.rglob("*")):
+            if p.is_file() and p.suffix.lower() in VALID_EXTENSIONS:
+                if any(part.endswith("_modern") for part in p.parts):
+                    continue
+                files.append((p, "original"))
+
+        # 2. Files inside class_dir/<class_name>_modern/
+        modern_dir = class_dir / f"{class_name}_modern"
+        if modern_dir.exists():
+            for p in sorted(modern_dir.rglob("*")):
+                if p.is_file() and p.suffix.lower() in VALID_EXTENSIONS:
+                    files.append((p, "modern"))
 
         if not files:
             print(f"  WARNING: no image files found in {class_dir}", file=sys.stderr)
             continue
 
-        for p in files:
+        n_original = sum(1 for _, v in files if v == "original")
+        n_modern = sum(1 for _, v in files if v == "modern")
+
+        for p, variant in files:
             rel_path = p.relative_to(dataset_root).as_posix()
             rows.append({
                 "filepath": rel_path,
                 "filename": p.name,
                 "class_name": class_name,
                 "source": source,
+                "variant": variant,
                 "file_hash": file_hash(p),
             })
 
-        print(f"  {class_name:12s} ({source:9s}): {len(files)} images")
+        print(f"  {class_name:12s} ({source:9s}): "
+              f"{len(files):5d} images  "
+              f"(original={n_original}, modern={n_modern})")
 
     if not rows:
         sys.exit("No images found anywhere under dataset root. Aborting.")
@@ -76,19 +95,21 @@ def check_duplicates(df: pd.DataFrame) -> None:
             file=sys.stderr,
         )
         dupes.sort_values("file_hash").to_csv("duplicates.csv", index=False)
+    else:
+        print("  No duplicate files detected.")
 
 
 def stratified_split(df: pd.DataFrame, val_frac: float, test_frac: float, seed: int) -> pd.DataFrame:
     df = df.copy()
-    df["strata"] = df["class_name"] + "__" + df["source"]
+    # Stratify by class + source + variant so old & modern mix in every split
+    df["strata"] = df["class_name"] + "__" + df["source"] + "__" + df["variant"]
 
-    # Guard against strata too small to stratify (need >= 2 per split).
     counts = df["strata"].value_counts()
     too_small = counts[counts < 10]
     if not too_small.empty:
         print(
-            f"  WARNING: these class/source groups have <10 images, split may "
-            f"be uneven: {too_small.to_dict()}",
+            f"  WARNING: these class/source/variant groups have <10 images, "
+            f"split may be uneven: {too_small.to_dict()}",
             file=sys.stderr,
         )
 
@@ -98,7 +119,6 @@ def stratified_split(df: pd.DataFrame, val_frac: float, test_frac: float, seed: 
         stratify=df["strata"],
         random_state=seed,
     )
-    # Split temp into val/test proportionally
     relative_test_frac = test_frac / (val_frac + test_frac)
     val_df, test_df = train_test_split(
         temp_df,
@@ -118,20 +138,27 @@ def stratified_split(df: pd.DataFrame, val_frac: float, test_frac: float, seed: 
 def print_summary(df: pd.DataFrame) -> None:
     print("\n=== Split summary (class x split) ===")
     summary = df.groupby(["class_name", "split"]).size().unstack(fill_value=0)
-    summary = summary[["train", "val", "test"]] if set(["train", "val", "test"]).issubset(summary.columns) else summary
+    if set(["train", "val", "test"]).issubset(summary.columns):
+        summary = summary[["train", "val", "test"]]
     print(summary.to_string())
 
     print("\n=== Split summary (source x split) ===")
     summary2 = df.groupby(["source", "split"]).size().unstack(fill_value=0)
     print(summary2.to_string())
 
+    print("\n=== Split summary (variant x split) ===")
+    summary3 = df.groupby(["variant", "split"]).size().unstack(fill_value=0)
+    print(summary3.to_string())
+
     print(f"\nTotal images: {len(df)}")
 
 
 def main():
     ap = argparse.ArgumentParser(description="Generate dataset manifest with stratified train/val/test split.")
-    ap.add_argument("--dataset-root", type=str, default="dataset", help="Path to dataset/ folder containing per-class subfolders")
-    ap.add_argument("--out", type=str, default="manifest.csv", help="Output manifest CSV path")
+    ap.add_argument("--dataset-root", type=str, default="dataset",
+                    help="Path to dataset/ folder containing per-class subfolders")
+    ap.add_argument("--out", type=str, default="manifest.csv",
+                    help="Output manifest CSV path")
     ap.add_argument("--val-frac", type=float, default=0.15)
     ap.add_argument("--test-frac", type=float, default=0.15)
     ap.add_argument("--seed", type=int, default=42)
@@ -149,7 +176,7 @@ def main():
 
     print(f"\nSplitting {len(df)} images "
           f"({1 - args.val_frac - args.test_frac:.0%}/{args.val_frac:.0%}/{args.test_frac:.0%}), "
-          f"stratified by class+source, seed={args.seed} ...")
+          f"stratified by class+source+variant, seed={args.seed} ...")
     df = stratified_split(df, args.val_frac, args.test_frac, args.seed)
 
     df.to_csv(args.out, index=False)
