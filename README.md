@@ -4,7 +4,7 @@ End-to-end document processing pipeline: classifies scanned documents into 5
 types, extracts structured fields via OCR, and routes low-confidence results
 to human review. Built as a placement portfolio project.
 
-**Timeline:** Sept 20 – Oct 10, 2026 (21 days)
+**Timeline:** Sept 20 – Oct 25, 2026 (37 days)
 
 ---
 
