@@ -226,110 +226,97 @@ forms are misclassified as invoices due to overlapping layout structure.
 | Confusion matrix | `results/confusion_matrix_transfer_phase25.png` |
 
 ---  
-## Phase 3 status — OCR ✅ Complete
+## Phase 3 — OCR ✅ Complete
 
-Goal: turn a document image (or PDF) into text **plus the position and
-confidence of every word**, so later phases can extract fields and decide
-what needs human review.
+**Goal:** Convert document images and PDF pages into OCR text, inspect detected words and their positions/confidence, and prepare the text for downstream field extraction.
 
-**Stack:** OpenCV (preprocessing) → Tesseract via `pytesseract` (OCR) →
-`pdf2image` + Poppler (PDF pages → images). All Phase 3 experiments live in
-`notebooks/phase3_ocr_learning.ipynb`.
+**Stack:** OpenCV → Tesseract (`pytesseract`) → `pdf2image` + Poppler for PDF conversion.
 
-### What was built and tested
+**Learning notebook:** `notebooks/phase3_ocr_learning.ipynb`
 
-| Area | What was covered |
-|---|---|
-| Image basics (OpenCV) | Image shape `(height, width, channels)`, BGR channels, grayscale conversion, resizing |
-| Preprocessing | Binary thresholding, adaptive thresholding, Gaussian / median blur for noise removal, contrast enhancement concepts |
-| Tesseract configuration | Page Segmentation Modes (PSM 3, 6, 7, 8, 10), language, OCR engine mode, character whitelist |
-| Structured output | `image_to_string()` for plain text; `image_to_data()` for text + `left / top / width / height` + `conf` per word |
-| Bounding boxes | Looped over detected words and drew boxes with `cv2.rectangle()` to visually check what OCR detected |
-| PDF input | Converted a 5-page PDF into page images with `pdf2image` and ran OCR on a page |
-| Text cleaning | Whitespace normalisation, removing stray OCR symbols with regex, keeping line breaks for extraction |
+### What we learned and tested
+
+| Area                              | Topics covered                                                                                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| OpenCV image basics               | Image shape `(height, width, channels)`, pixels, RGB/BGR channels, loading and displaying images, grayscale conversion                                       |
+| Image preprocessing               | Thresholding, adaptive thresholding, Gaussian blur basics, resizing, and comparing preprocessing results                                                     |
+| Tesseract OCR                     | Installing/importing `pytesseract`, `image_to_string()`, understanding OCR output, and PSM 6, 7 and 8                                                        |
+| OCR bounding boxes and confidence | `image_to_data()`, word text, `left`, `top`, `width`, `height`, confidence scores, looping through detected words, and drawing boxes using `cv2.rectangle()` |
+| Blurry-document testing           | Comparing original, grayscale and adaptive-threshold images; testing resizing; understanding preprocessing limitations                                       |
+| PDF-to-image conversion           | Using `pdf2image`, converting PDF pages to images, and passing a converted page to Tesseract                                                                 |
+| OCR text cleaning                 | Removing surrounding whitespace, normalising whitespace, cleaning unwanted characters with regex, and understanding why line breaks matter for extraction    |
 
 ### Key concepts learned
 
-- **`image_to_string()` vs `image_to_data()`:** the first only returns text.
-  The second also returns where each word is and how confident Tesseract is,
-  which is what Phase 5 (confidence scoring) needs.
-- **Confidence is a review signal, not proof of correctness.** Tesseract
-  returns `-1` for non-word entries (blocks, lines), and a high score does not
-  guarantee the text is right.
-- **Bounding boxes locate text; they don't understand it.** Deciding that a
-  number is the *invoice total* is the job of the extraction rules (Phase 4).
-- **PSM matters.** PSM 3 (automatic layout) is the default and suits full
-  pages; PSM 6 assumes one uniform block; PSM 7/8/10 are for a single line,
-  word or character.
+- **`image_to_string()` vs `image_to_data()`:** `image_to_string()` returns recognised text. `image_to_data()` provides recognised text along with positional information and confidence values.
+- **Confidence is a review signal, not proof of correctness.** Low-confidence text may indicate a problem, while high confidence does not guarantee that the recognised text is correct.
+- **Bounding boxes locate text; they do not identify its business meaning.** Determining which number represents an invoice total belongs to Phase 4 — Extraction.
+- **PSM affects text recognition.** Different page segmentation modes suit different layouts, such as a full page, a block of text, a line, a word or a character.
+- **Preprocessing has limits.** Thresholding or resizing may help some documents, but severe blur can still produce unreadable output.
+- **OCR text structure matters.** Removing all line breaks can make it harder to associate field labels with their values.
 
-### Experiment 1 — clean digital invoice
+### Experiment 1 — Clean digital invoice
 
-A clean, digitally generated invoice (1317×1194) was read almost perfectly
-with default settings: company details, bill-to block, item list and payment
-details all came out correctly, and most word confidences were in the
-**90–97 range**.
+A clean digital invoice was processed using Tesseract. We inspected the recognised text and word-level confidence information.
 
-The few low-confidence words pointed at exactly the places OCR struggled — a
-decorative logo/tagline (confidence 0, read as garbage) and a table label that
-was misread (confidence 45–53). This supports using per-word confidence to
-flag unreliable regions.
+This helped demonstrate that OCR can recognise clean printed content effectively, while decorative text and some table labels may still be misread.
 
-### Experiment 2 — blurred invoice
+### Experiment 2 — Blurry invoice
 
-A deliberately blurred invoice (1536×1024) was run through different
-preprocessing pipelines (all with `--psm 6` unless noted):
+We compared OCR results from the original image, grayscale conversion, adaptive thresholding and resizing.
 
-| Pipeline | Result |
-|---|---|
-| Original image, default settings | Empty output |
-| Original image | A few fragments only |
-| Grayscale | Mostly noise |
-| Adaptive threshold | **Best of the set:** company name and the word "INVOICE" became readable, body text still garbled |
-| 2× upscale (cubic) + grayscale | Noise |
-| 2× upscale + adaptive threshold | Worse — noise |
-
-**Conclusion:** preprocessing helps borderline images but **cannot recover
-severe blur**, and more processing is not always better. Instead of trying to
-"fix" unreadable uploads, the system should detect them and route them to
-review (see decisions below).
+**Conclusion:** Preprocessing can help with some difficult images, but severe blur cannot reliably be repaired through preprocessing alone. Unreadable documents should be flagged for human review rather than trusted automatically.
 
 ### Experiment 3 — PDF invoice
 
-A real 5-page e-commerce invoice PDF was converted to images with
-`pdf2image` (Poppler backend). OCR on a page correctly read the seller name,
-GSTIN, order ID, order and invoice dates, line items and the grand total.
-Table columns came out as flattened lines, with some columns merged on the
-same line.
+A real multi-page invoice PDF was converted into page images using `pdf2image`. We then ran OCR on a converted page.
+
+The OCR text contained invoice details and line items, but table columns were sometimes flattened or merged. This showed why extracting structured fields from invoice OCR requires additional rules and validation.
 
 ### Decisions carried forward
 
-| Decision | Used in |
-|---|---|
-| Use `image_to_data()` (not just `image_to_string()`) so every line keeps text, position and confidence | Phase 4, 5 |
-| Preserve line breaks when cleaning text — most invoice fields sit on one line with their label | Phase 4 |
-| Use `pdf2image` + Poppler for PDF uploads; each page is OCR'd as its own image | Phase 6 |
-| Route low-confidence or empty OCR results to the human review queue instead of auto-approving | Phase 5 |
-| Warn the user in the UI when an upload looks blurry or unreadable | Phase 7 |
-| Final PSM choice (3 vs 6) to be settled on a test set of real invoices | Phase 4 |
+| Decision                                                                            | Relevant phase           |
+| ----------------------------------------------------------------------------------- | ------------------------ |
+| Use OCR text as the input to field extraction                                       | Phase 4                  |
+| Use `image_to_data()` when word positions and OCR confidence are needed             | Phases 4–5               |
+| Preserve useful line breaks and field labels during text cleaning                   | Phase 4                  |
+| Convert PDF pages to images before running Tesseract                                | OCR pipeline integration |
+| Flag empty or potentially unreliable OCR output for human review                    | Phases 5–7               |
+| Test OCR configuration against a varied document set before choosing final settings | Testing and integration  |
 
-### Known limitations (feeds the Phase 8 Known Failure Modes doc)
+### Known limitations
 
-- Severely blurred or low-resolution images produce empty or garbage text;
-  preprocessing does not fix this.
-- Logos, taglines and decorative fonts produce junk words (usually with low
-  confidence).
-- Tables are read as flattened lines, so columns can merge.
-- Only English (`eng`) was tested. Handwriting and scanned 1960s–1990s
-  RVL-CDIP microfilm pages were not evaluated for OCR.
-- Confidence scores flag likely errors but do not guarantee correctness.
+- Severely blurred or low-resolution images can produce empty or incorrect OCR text.
+- Logos, decorative fonts and unusual layouts may be recognised incorrectly.
+- Invoice tables may be flattened, causing columns and values to lose their original relationships.
+- OCR recognition errors can affect downstream extraction.
+- OCR confidence does not guarantee correctness.
+- PDF conversion and OCR need to be handled page by page for multi-page documents.
+- The experiments so far do not establish reliable OCR performance across every document type, language or scan quality.
 
-### Next: Phase 4 — Extraction
+### Next — Phase 4: Rule-Based Field Extraction
 
-A first rule-based invoice extractor (invoice number, date, total, vendor,
-GSTIN) is already prototyped on OCR text. It tries several keyword patterns
-per field, returns a confidence per field, and flags the document for review
-when a required field is missing. Next step is testing it on a varied set of
-real invoices and extending to the other four document types.
+**Status: In progress.**
+
+We have started applying regex rules to real invoice OCR text. The initial target fields include:
+
+- Invoice number
+- Invoice date and order date
+- Seller name and GSTIN
+- Customer details where available
+- Subtotal, tax, shipping and total amount
+- Email and phone number where available
+
+The first rules are prototypes, not a fully validated extractor. The real invoice example demonstrated that OCR text can contain inconsistent labels, repeated values and scrambled table data.
+
+**Next steps:**
+
+1. Improve and test regex patterns against the actual OCR text.
+2. Handle missing fields and multiple possible label formats.
+3. Verify extracted values instead of assuming every regex match is correct.
+4. Document the limitations of rule-based extraction.
+5. Extend the extraction rules to other document types after invoice extraction is tested.
+
 
 ## Requirements
 
