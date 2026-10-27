@@ -8,20 +8,19 @@ to human review. Built as a placement portfolio project.
 
 ---
 
-## Project phases
+# Project phases
 
 - [x] **Phase 1 — CNN baseline + dataset manifest** *(completed)*
 - [x] **Phase 2 — Transfer learning (MobileNetV2)** *(completed)*
 - [x] **Phase 2.5 — Modern data collection** *(completed)*
 - [x] **Phase 2.6 — Combined retraining (old + modern)** *(completed)*
-- [ ] Phase 3 — OCR
+- [x] **Phase 3 — OCR** *(completed)*
 - [ ] Phase 4 — Extraction
 - [ ] Phase 5 — Validation / confidence scoring
 - [ ] Phase 6 — FastAPI + SQLite + model versioning + audit log
 - [ ] Phase 7 — React dashboard
 - [ ] Phase 8 — Testing + golden set + adversarial fixtures + Known Failure Modes doc
 - [ ] Phase 9 — Integration + docs + Future Work (async job queue)
-
 ---
 
 ## Dataset
