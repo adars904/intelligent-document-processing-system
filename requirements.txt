@@ -1,0 +1,53 @@
+# ============================================================
+# Document AI System - requirements.txt
+# Install:  pip install -r requirements.txt
+# NOTE: Tesseract OCR and Poppler are NOT pip packages. Install them separately
+#       (see the bottom of this file).
+# ============================================================
+
+# ---- Resume / invoice OCR extraction (core) ----
+numpy>=1.24
+opencv-python>=4.8          # on servers/Colab use opencv-python-headless instead
+Pillow>=10.0
+pytesseract>=0.3.10         # Python wrapper; needs the Tesseract program installed
+pdf2image>=1.17             # PDF -> images; needs Poppler installed
+
+# ---- FastAPI backend ----
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9     # required for file uploads
+pydantic>=2.0
+
+# ---- Notebooks, data handling, reports (training / evaluation / confusion matrices) ----
+jupyter>=1.0
+ipykernel>=6.29
+pandas>=2.0
+matplotlib>=3.7
+seaborn>=0.13
+scikit-learn>=1.3
+
+# ---- Testing / sample generation ----
+pytest>=8.0
+reportlab>=4.0              # generates the synthetic sample resumes
+httpx>=0.27                 # FastAPI TestClient
+
+# ---- CNN classifier ----
+# You already have TensorFlow/Keras working for your .keras models, so it is left
+# commented out to avoid changing your existing version. Uncomment only on a fresh machine.
+# tensorflow>=2.15
+
+# ============================================================
+# NOT installable with pip - install these manually (Windows):
+#
+# 1) Tesseract OCR  (UB-Mannheim build)
+#    https://github.com/UB-Mannheim/tesseract/wiki
+#    Default install path: C:\Program Files\Tesseract-OCR\tesseract.exe
+#    If not auto-detected:  setx TESSERACT_CMD "C:\Program Files\Tesseract-OCR\tesseract.exe"
+#
+# 2) Poppler  (needed for PDF input)
+#    https://github.com/oschwartz10612/poppler-windows/releases
+#    Unzip to C:\poppler, then:  setx POPPLER_PATH "C:\poppler\Library\bin"
+#    (close and reopen VS Code after using setx)
+#
+# Linux / Colab:  apt-get install -y tesseract-ocr poppler-utils
+# ============================================================

@@ -16,6 +16,9 @@ __pycache__/
 .venv/
 venv/
 
+# Extracted resume results (contain personal data)
+results/resume_*.json
+
 # OS junk
 .DS_Store
 Thumbs.db
